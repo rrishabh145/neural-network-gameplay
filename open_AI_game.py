@@ -102,6 +102,20 @@ def neural_network_model(input_size):
 
     return model
 
+# fn to train the tf model using training data declared in previous fn
+def train_model(training_data, model = False):
+    X = np.array([i[0] for i in training_data]).reshape(-1, len(training_data[0][0]), 1)
+    y = [i[1] for i in training_data]
 
+    if not model: #if we are not loading an earlier pretrained model
+        model = neural_network_model(input_size = len(X[0])) #getting the raw train_model  
+
+    # fitting the model with the data
+    model.fit({'input':X}, {'targets':y},n_epoch = 5, snapshot_step = 500, show_metric = True, run_id = 'OpenAIgame')
+
+    return model
+
+training_data = initial_population()
+model = train_model(training_data)
 
 #initial_population()
