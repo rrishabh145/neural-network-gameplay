@@ -6,6 +6,7 @@ from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.estimator import regression
 from statistics import mean, median
 from collections import Counter
+import time
 
 LR = 1e-3 #learning rate for NN
 env = gym.make('CartPole-v0') #selecting a game environment
@@ -50,7 +51,7 @@ def initial_population():
             score += reward
             if done:
                 break
-
+        # include code from this part if retraining of the models needs to be done
         if score >= score_requirement: # making training data only of acceptable score
             accepted_scores.append(score)
             for data in game_memory: #manually one-hot-encoding the 0,1 output
@@ -111,11 +112,40 @@ def train_model(training_data, model = False):
         model = neural_network_model(input_size = len(X[0])) #getting the raw train_model  
 
     # fitting the model with the data
-    model.fit({'input':X}, {'targets':y},n_epoch = 5, snapshot_step = 500, show_metric = True, run_id = 'OpenAIgame')
+    model.fit({'input':X}, {'targets':y},n_epoch = 3, snapshot_step = 500, show_metric = True, run_id = 'OpenAIgame')
 
     return model
 
 training_data = initial_population()
 model = train_model(training_data)
 
-#initial_population()
+scores = []
+choices = []
+
+for each_game in range(100):
+    score = 0
+    game_memory = []
+    prev_obs = []
+    env.reset()
+    for _ in range(goal_steps):
+        # env.render()
+        # time.sleep(0.005)
+        if len(prev_obs) == 0:
+            action = random.randrange(0,2)
+        else:
+            # print(model.predict(prev_obs.reshape(-1, len(prev_obs),1)))
+            action = np.argmax(model.predict(prev_obs.reshape(-1, len(prev_obs),1))[0])
+        choices.append(action)
+
+        new_observation, reward, done, info = env.step(action)
+        prev_obs = new_observation
+        game_memory.append([new_observation,action])
+        score += reward
+        if done:
+            break
+    scores.append(score)
+
+print('Average Score', sum(scores)/len(scores))
+print('Choice 1: {}, Choice 0: {}' .format(choices.count(1)/len(choices), choices.count(0)/len(choices)))
+
+#model.save('tpy.model')
